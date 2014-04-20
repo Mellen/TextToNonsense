@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import cherrypy
+from mako.template import Template
 import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -8,7 +9,18 @@ class Server(object):
 
     @cherrypy.expose
     def index(self):
-        return 'hello world'
+        template = Template(filename=os.path.join(current_dir,'templates/index.html'))
+        return template.render()
+
+    @cherrypy.expose
+    def analyse(self, text):
+        words = text.split()
+        pairs = []
+        if len(words) > 1:
+            pairs = [words[i:i+2] for i in range(0, len(words)-1)]
+        else:
+            pairs = [words]
+        return unicode(pairs)
 
 conf = {
     'global': {
