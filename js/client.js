@@ -3,6 +3,16 @@ var context = canvas.getContext('2d');
 var maxPixel = 810000;
 var currentIndex = 0;
 
+var socket = WebSocket('ws://'+location.host+'/ws')
+
+socket.onopen = function(){jQuery('#message').text('socket open');};
+
+socket.onmessage = function(message)
+{
+    data = jQuery.parseJson(message);
+    updatePicture(data);
+};
+
 jQuery('#btnSubmit').click(function (e)
 			   {
 			       var result = jQuery.post('analyse', {'text':jQuery('#txtInput').val()}, 
@@ -10,7 +20,7 @@ jQuery('#btnSubmit').click(function (e)
 							{
 							    jQuery('#message').text(data.text);
 							    
-							    updatePicture(data);
+//							    updatePicture(data);
 							    
 							    jQuery('#txtInput').val('');
 							}, 
