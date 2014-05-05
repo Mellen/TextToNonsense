@@ -7,6 +7,11 @@ import struct
 import math
 from difflib import SequenceMatcher
 import json
+from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
+from ws4py.websocket import EchoWebSocket
+
+WebSocketPlugin(cherrypy.engine).subscribe()
+cherrypy.tools.websocket = WebSocketTool()
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,7 +28,7 @@ class Server(object):
 
     @cherrypy.expose
     def analyse(self, text):
-        s1 = sha.new(text)
+        s1 = sha.new(text.encode('raw_unicode_escape'))
         digest = s1.digest()
         bs = bytearray(digest)
 
@@ -36,11 +41,16 @@ class Server(object):
 
         if(self.lastText != None):
             sm = SequenceMatcher(None, text, self.lastText)
-            self.diff = 1 - sm.ratio
+            self.diff = 1 - sm.ratio()
 
         self.lastText = text
 
-        return json.dumps((text, (c1, c2, c3, c4, c5, c6), self.diff))
+        return json.dumps({'text':text, 'colours':(c1, c2, c3, c4, c5, c6), 'ratio':self.diff})
+
+    @cherrypy.expose
+    def ws(self):
+        # you can access the class instance through
+        handler = cherrypy.request.ws_handler
 
 conf = {
     'global': {
@@ -58,6 +68,10 @@ conf = {
     '/img':{
         'tools.staticdir.on': True,
         'tools.staticdir.dir': os.path.join(current_dir, 'img'),
+        },
+    '/ws': {
+        'tools.websocket.on': True,
+        'tools.websocket.handler_cls': EchoWebSocket
         }
 }
 
