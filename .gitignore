@@ -1,2 +1,4 @@
 *.*~
+*.pyc
 .artweek*
+js/jquery.min.js
