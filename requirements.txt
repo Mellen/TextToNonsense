@@ -1,0 +1,4 @@
+cherrypy
+ws4py
+BeautifulSoup
+Mako
