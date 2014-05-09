@@ -10,6 +10,11 @@ import json
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import EchoWebSocket
 from mysocket import MySocket
+import urllib2
+import threading
+import time
+import re
+from BeautifulSoup import BeautifulSoup
 
 WebSocketPlugin(cherrypy.engine).subscribe()
 cherrypy.tools.websocket = WebSocketTool()
@@ -19,9 +24,35 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 class Server(object):
 
     def __init__(self):
+        cherrypy.engine.subscribe('stop', self.stopPollingTwitter)
         self.lastText = None
         self.diff = 0.0
         self.wsHandlers = []
+        self.twitterThread = None
+        self.pollingTwitter = False
+
+    def pollTwitter(self):
+        exp = re.compile('.*tweet-text.*')
+        while self.pollingTwitter:
+            response = urllib2.urlopen('https://twitter.com/search?q=%23random')
+            html = response.read()
+            soup = BeautifulSoup(html)
+            text = soup.find('p', {'class': exp}).text
+            self.analyse(text)
+            i = 0
+            while self.pollingTwitter and i < 60:
+                time.sleep(1)
+                i = i + 1
+
+    def stopPollingTwitter(self):
+        self.pollingTwitter = False
+        self.twitterThread.join()
+
+    def startPollingTwitter(self):
+        self.twitterThread = threading.Thread(target=self.pollTwitter)
+        self.pollingTwitter = True
+        self.twitterThread.demon = True
+        self.twitterThread.start()
 
     @cherrypy.expose
     def index(self):
@@ -85,4 +116,8 @@ conf = {
         }
 }
 
-cherrypy.quickstart(Server(), '/', conf)
+s = Server()
+
+s.startPollingTwitter()
+
+cherrypy.quickstart(s, '/', conf)
