@@ -21,8 +21,6 @@ jQuery('#btnSubmit').click(function (e)
 							{
 							    jQuery('#message').text(data.text);
 							    
-//							    updatePicture(data);
-							    
 							    jQuery('#txtInput').val('');
 							}, 
 							'json');
