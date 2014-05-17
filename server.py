@@ -34,12 +34,20 @@ class Server(object):
     def pollTwitter(self):
         exp = re.compile('.*tweet-text.*')
         while self.pollingTwitter:
-            response = urllib2.urlopen('https://twitter.com/search?q=%23random')
-            html = response.read()
-            soup = BeautifulSoup(html)
-            text = soup.find('p', {'class': exp}).text
-            self.analyse(text)
+            failed = False
             i = 0
+            try:
+                response = urllib2.urlopen('https://twitter.com/search?q=%23random')
+            except urllib2.URLError as e:
+                cherrypy.log('Cannot read twitter: ' +  str(e.reason))
+                failed = True
+            if not failed:
+                html = response.read()
+                soup = BeautifulSoup(html)
+                text = soup.find('p', {'class': exp}).text
+                self.analyse(text)
+            else:
+                i = 58
             while self.pollingTwitter and i < 60:
                 time.sleep(1)
                 i = i + 1
